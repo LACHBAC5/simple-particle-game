@@ -6,6 +6,16 @@ collisions with walls and other objects.
 
 The project's aim is in no way realism and more of a challenge.
 
+[sfml](https://www.sfml-dev.org/)
+
+compilation:
+
+g++ -c main.c++
+
+g++ main.o -o main -lsfml-graphics -lsfml-window -lsfml-system
+
+./main
+
 The control parts of the program are typed as macros{
 
 scrwidth, scrheight
