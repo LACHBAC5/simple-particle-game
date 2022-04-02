@@ -1,74 +1,88 @@
 # simple-particle-game
 
-This projects is about making simplistic rules to
-moving 1d circular objects regarding their movenment,
-collisions with walls and other objects.
+> The main aim of this project is to implement simple physics for collisions between circular 2D objects when calculating their position on the window accounting  for time and succession of collisions.
 
-The project's aim is in no way realism and more of a challenge.
+## inner workings
 
-[sfml](https://www.sfml-dev.org/)
+1. There is two threads. The first working on user input and drawing and the second updating the position of the objects every n seconds.
+2. To capture user input and to draw the objects on the screen [sfml](https://www.sfml-dev.org/) library is used.
+3. To store the arguments of a circle an obj of class circle is used. It stores position and angle among other things.
+4. Updating the position is done by starting from second 0 and adding the time needed for the nearest collision to happen while the total time is not equal to n.
+5. For every collision new travel angles are calculated for both circles but their speed remains constant.
 
-compilation:
+## how to use
 
+All obvious settings are defined as macros:
+
+```
+// dimensions of window
+#define scrwidth 450
+#define scrheight 450
+
+// Those settings are used to define the position of the walls. 
+// if they are set to 0 and 0 then the window borders are used else they form a square inside the window.
+#define boxoffsetx 30
+#define boxoffsety 30
+
+// fps of window
+#define windowupdate 30
+
+// how much time is there between each update of the positions of the circle (second)
+#define calcupdate 0.5
+
+// the speed of every circle (pixels/second)
+#define circlespd 10
+
+// Whether you want the circles colliding with eachother (circle collision detection)
+#define ccd true
+
+// Whether you want the circles collidiing the walls (wall collision detection)
+#define wcd true
+```
+
+Compilation is as follows:
+
+```
 g++ -c main.c++
 
 g++ main.o -o main -lsfml-graphics -lsfml-window -lsfml-system
 
 ./main
+```
 
-The control parts of the program are typed as macros{
+## more on CCD
 
-scrwidth, scrheight
+Firstly for a collision to happen the distance between two circles needs to be the total of boths radiuses.
 
-boxoffsetx -> how much pixels after x=0 and how much pixels before x=scrwidth is the box's x located
-boxoffsety -> how much pixels after y=0 and how much pixels before y=scrheight is the box's y located
+If the position of one circle is named "A" and the other one "B" then we need to find when "AB" is equal to the total.
 
-windowupdate -> or fps
+We can find "AB" for any point in time by viewing it as the hypotenuse of a triangle where "AC" is the difference between the y axis
+of the circles and "BC" is the difference between the x axis of the circles.
 
-calcupdate -> time between updates of the position of each object
+So to find "AC" for any point in time we use the Pythagorean theorem 
 
-circlespd -> speed of each object
+-> pow(AB, 2) = pow(BC, 2) + pow(AC, 2)
 
-ccd (circle collicion detection) -> if you want to see colliding circles
+or -> pow(AB, 2) = pow(circle1.x - circle2.x, 2) + pow(circle1.y - circle2.y, 2)
 
-wcd (wall collision detection) -> if you want to see colliding with walls (box)
 
-}
+In our case we have to calculate the position of each circle in the next n seconds because we need to find how long "AB" will be in the next n seconds.
 
-How the obj to obj detection works:
+Both circles will contribute to the change in both x and y because they both move through space during that time.
 
-**To have a collision 2 objs need to be (obj.r+obj1.r) length apart**
+-> pow(AB,2) = pow((circle1.x+cos(circle1.angle).time) - (circle2.x+cos(circle2.angle).time), 2) + pow(change_in(BC), 2)
 
-The distance between 2 objs is calculated using the Pythagorean theorem
 
-1. pow(AB,2) = pow(AC,2) + pow(BC,2)
+-> pow(AB,2) = pow((circle1.x+cos(circle1.angle).time) - (circle2.x+cos(circle2.angle).time), 2) + 
 
-where **AB** is the distance between the objects
+pow((circle1.y-sin(circle1.angle).time) - (circle2.y-sin(circle2.angle).time), 2)
 
-where **AC** is the distance between the x cords of the objects
+Now we have time in seconds written to the formula and because this is how aquations work we can find the exact time a collision will happen given we know all other values which we actually do.
 
-where **BC** is the distance between the y cords of the objects
+Now we need to solve for time using basic arithmetics which is though lengthy. The formula which is obtained can be found by adding variables a, b and c from main.c++. The cause of seperation is that the formula is [quadratic](https://en.wikipedia.org/wiki/Quadratic_formula).
 
-But we need to calculate AB for the next n seconds.
-To do this we need to calculate how far apart our objects will be
-at second n from now...
+## problems
 
-2. pow(AB,2) = pow(change_in(AC), 2) + pow(change_in(BC), 2)
-3. pow(AB,2) = pow((obj0.x+cos(obj0.angle).**time**) - (obj1.x+cos(obj1.angle).**time**), 2) + pow(change_in(BC), 2)
-4. pow(AB,2) = pow((obj0.x+cos(obj0.angle).**time**) - (obj1.x+cos(obj1.angle).**time**), 2) + pow((obj0.x-sin(obj0.angle).**time**) - (obj1.x-sin(obj1.angle).**time**), 2)
+The drawing core is dying. (at least on my pc)
 
-Here comes the real question whose answer our program needs:
-After how much **TIME** 2 objs are going to collide?
-
-We now take the formula apart and solve for **TIME**
-
-5. The formula is written in the main.c++. (a+b+c)
-
-The steps are not written because it is lengthy (3 pages) and solving it require basic arithmetics.
-
-It is seperated because it is a [quadratic formula](https://en.wikipedia.org/wiki/Quadratic_formula)
-
-CODE PROBLEMS:
-The drawing of the circles kills one core (at least on my pc)
-
-obj to obj detection is unreliable (though concept works)
+Circle to circle collision is unreliable when having multiple collisions at one. (some are skipped)
